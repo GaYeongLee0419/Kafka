@@ -20,25 +20,16 @@ public class KafkaProducerController {
     @Value("${topic.name}")
     private String topicName;
 
-//    @PostMapping("/send")
-//    public ResponseEntity<Void> sendMessage(@RequestParam String message) {
-//        try {
-//            kafkaTemplate.send(topicName, message);
-//            return ResponseEntity.ok().build();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-//        }
-//
-//    }
-
     @PostMapping("/send")
-    public ResponseEntity<Void> sendMessage(@RequestBody IAGProvisioningReqeuestJSON reqeust) {
+    public ResponseEntity<Void> sendMessage(@RequestParam int partition,
+                                            @RequestParam(required = false) String key,
+                                            @RequestParam String message) {
         try {
-            kafkaProducerService.sendMessage(topicName, reqeust);
+            kafkaProducerService.sendMessage(partition, key, message);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            log.error("Error sending message to partition {}: {}", partition, e.getMessage(), e);
+
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

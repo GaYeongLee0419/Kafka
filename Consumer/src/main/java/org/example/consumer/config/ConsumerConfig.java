@@ -34,18 +34,18 @@ public class ConsumerConfig {
 
     // Kafka 컨슈머 인스턴스를 생성
     @Bean
-    public ConsumerFactory<String, IAGProvisioningRequestJSON> consumerFactory() {
+    public ConsumerFactory<String, String> consumerFactory() {
         return new DefaultKafkaConsumerFactory<>(consumerConfig(),
                 new StringDeserializer(),
-                new JsonDeserializer<IAGProvisioningRequestJSON>(IAGProvisioningRequestJSON.class));
+                new StringDeserializer());
     }
 
     // Kafka 메시지 리스너를 관리하는 컨테이너 팩토리
     // 다중 스레드로 Kafka 메시지를 병렬 처리
     // 이 팩토리를 통해 Kafka 리스너(@KafkaListener)를 등록하고 관리
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, IAGProvisioningRequestJSON> kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, IAGProvisioningRequestJSON> factory = new ConcurrentKafkaListenerContainerFactory<>();
+    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
 
         return factory;
