@@ -1,14 +1,16 @@
 package org.example.consumer.config;
 
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.example.consumer.model.IAGProvisioningRequestJSON;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
-import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.listener.ConsumerAwareRebalanceListener;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,12 +26,12 @@ public class ConsumerConfig {
         Map<String, Object> config = new HashMap<>();
 
         config.put(org.apache.kafka.clients.consumer.ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, env.getProperty("spring.kafka.consumer.bootstrap.servers"));
-        config.put(org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG, env.getProperty("spring.kafka.consumer.group.id"));
-        config.put(org.apache.kafka.clients.consumer.ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, env.getProperty("spring.kafka.consumer.auto.offset-reset"));
+        config.put(org.apache.kafka.clients.consumer.ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, env.getProperty("spring.kafka.consumer.auto-offset-reset"));
         config.put(org.apache.kafka.clients.consumer.ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         config.put(org.apache.kafka.clients.consumer.ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
 
         return config;
+
     }
 
     // Kafka 컨슈머 인스턴스를 생성
@@ -47,6 +49,23 @@ public class ConsumerConfig {
     public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
+
+        //Rebalanacing 설정
+        factory.getContainerProperties().setConsumerRebalanceListener(new ConsumerAwareRebalanceListener() {
+            // Rebalancing 전 offset commit
+            @Override
+            public void onPartitionsRevokedBeforeCommit(Consumer<?, ?> consumer, Collection<TopicPartition> partitions) {
+                ConsumerAwareRebalanceListener.super.onPartitionsRevokedBeforeCommit(consumer, partitions);
+
+                consumer.commitSync();
+            }
+
+            //
+            @Override
+            public void onPartitionsAssigned(Consumer<?, ?> consumer, Collection<TopicPartition> partitions) {
+                ConsumerAwareRebalanceListener.super.onPartitionsAssigned(consumer, partitions);
+            }
+        });
 
         return factory;
     }
